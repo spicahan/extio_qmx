@@ -14,7 +14,7 @@ Everything else in the code is just boilerplate and pretty straightforward.
 
 ## How to use
 
-Download the `extio_qmx.dll` file here or build it from source.
+Download the `extio_qmx.dll` file [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/extio_qmx.dll) or build it from source.
 
 Place the `extio_qmx.dll` file inside the N1MM Logger+ installation directory (usually it's `C:\Program Files (x86)\N1MM Logger+`). 
 
