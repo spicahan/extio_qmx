@@ -16,8 +16,6 @@ Everything else in the code is just boilerplate and pretty straightforward.
 
 Download the `extio_qmx.dll` file [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/extio_qmx.dll) or build it from source. Place the `extio_qmx.dll` file inside the N1MM Logger+ installation directory (usually it's `C:\Program Files (x86)\N1MM Logger+`). 
 
-If you're not building from source, you need to download the dependency files `libportaudio-2.dll` from [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/libportaudio-2.dll) and `libwinpthread-1.dll` from [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/libwinpthread-1.dll). Place both dll files along with the main `extio_qmx.dll` in the N1MM Logger+ installation directory.
-
 Disconnect your QMX from your computer first. Enable your QMX's I/Q mode and restart it. Reconnect QMX to your computer. Make sure it's in CW mode, not Digi.
 
 Follow the N1MM Logger+ configuration instructions: [N1MM SDR Server – For radios with Extio dll support – THIS IS THE PREFERRED METHOD FOR SDRPlay and Airspy HF+/Discovery SDRs](https://n1mmwp.hamdocs.com/manual-windows/spectrum-display-window/#n1mm-sdr-server-for-radios-with-extio-dll-support-this-is-the-preferred-method-for-sdrplay-and-airspy-hf-discovery-sdrs).
@@ -45,8 +43,8 @@ Since N1MM Logger+ is a 32-bit program, we have to use 32-bit toolchain. I use `
 
 Follow [PortAudio's instruction](https://files.portaudio.com/docs/v19-doxydocs/compile_windows_mingw.html) to build `portaudio` first.
 
-To build the `extio.dll` itself, under `mingw32`'s environment, use the command below to compile:
+To build the `extio.dll` itself, in `mingw32`'s environment, use the command below to compile:
 
 ```
-g++ -Wall -shared -static-libgcc -static-libstdc++ -o extio_qmx.dll extio_qmx.cpp -lportaudio "-Wl,--kill-at"
+g++ -Wall -shared -static -o extio_qmx.dll extio_qmx.cpp -lportaudio -lwinmm "-Wl,--kill-at"
 ```
