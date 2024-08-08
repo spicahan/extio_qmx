@@ -1,5 +1,8 @@
 #include <portaudio.h>
+#include <array>
 #include <cassert>
+#include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -20,19 +23,35 @@ extern "C" {
     long __stdcall GetHWSR();
     int __stdcall GetStatus();
     void __stdcall SetCallback(void (*Callback)(int, int, float, void*));
+    void __stdcall ModeChanged(char mode);
 }
 
 constexpr long SampleRate = 48000;
 constexpr int IQPairs = 512;
-constexpr long qmxIFFreq = 12000;
-constexpr long qmxSidetoneFreq = 700;
+constexpr long QmxIFFreq = 12000;
+constexpr long QmxSidetoneFreq = 700;
 
 // Global variables
 PaDeviceIndex deviceIdx = paNoDevice;
 PaStream *stream = nullptr;
 void (*IQCallback)(int, int, float, void*) = nullptr;
-bool started = false;
+static bool started = false;
 static long fakeLOFreq = 0;
+static bool cwMode = false;
+
+#ifdef I_ONLY
+constexpr int DecimationFactor = 8;
+static std::array<float, IQPairs * 2> i_only_buffer;
+static void iqSampling(float iqSample[2]) {
+    static unsigned long long n = 0;
+    const float coefficient = 700.0f / 6000.0f;
+    // Q
+    iqSample[1] = -iqSample[0] * sin(2.0f * M_PI * n * coefficient);
+    // I
+    iqSample[0] *= cos(2.0f * M_PI * n * coefficient);
+    ++n;
+}
+#endif
 
 // Function to enumerate and initialize the soundcard
 PaDeviceIndex FindSoundCard() {
@@ -63,12 +82,38 @@ static int paCallback(const void *input, void *output,
                       const PaStreamCallbackTimeInfo *timeInfo,
                       PaStreamCallbackFlags statusFlags,
                       void *userData) {
-    std::cout << "paCallback() called" << std::endl;
     assert(frameCount == IQPairs);
+#ifdef I_ONLY
+    static int calledCount = 0;
+#endif
 
     if (started && IQCallback) {
+#ifdef I_ONLY
+        // Discard all the Q samples and decimate the I samples
+        float const(*iq_in_buffer)[2] = reinterpret_cast<float const(*)[2]>(input);
+        float(*iq_out_buffer)[2] = reinterpret_cast<float(*)[2]>(i_only_buffer.data());
+        for (int i = 0; i < IQPairs; i+=DecimationFactor)
+        {
+            auto &inputSample = iq_in_buffer[i];
+            auto &outputSample = iq_out_buffer[(calledCount % DecimationFactor) * IQPairs / DecimationFactor + i / DecimationFactor];
+            outputSample[0] = inputSample[0];
+            outputSample[1] = 0.0f;
+        }
+        if (calledCount % DecimationFactor == 0) {
+            // If it's CW mode, down convert by CW sidetone offset by IQ sampling at the sidetone frequency
+            if(cwMode) {
+                for (int i = 0; i < IQPairs; i++)
+                {
+                    iqSampling(iq_out_buffer[i]);
+                }
+            }
+            IQCallback(frameCount, 0, 0.0f, i_only_buffer.data());
+        }
+        calledCount++;
+#else
         auto inputPtr = reinterpret_cast<intptr_t>(input);
         IQCallback(frameCount, 0, 0.0f, reinterpret_cast<void *>(inputPtr));
+#endif
     }
 
     return paContinue;
@@ -140,7 +185,11 @@ void __stdcall StopHW() {
 }
 
 long __stdcall GetHWLO() {
-    return fakeLOFreq - (qmxIFFreq + qmxSidetoneFreq);
+#if (defined(QDX) || defined(I_ONLY))
+    return fakeLOFreq;
+#else
+    return fakeLOFreq - (QmxIFFreq + (cwMode ? QmxSidetoneFreq : 0));
+#endif
 }
 
 int __stdcall SetHWLO(long LOfreq) {
@@ -149,12 +198,20 @@ int __stdcall SetHWLO(long LOfreq) {
 }
 
 long __stdcall GetHWSR() {
+#ifndef I_ONLY
     return SampleRate;
-    
+#else
+    return SampleRate / DecimationFactor;
+#endif
 }
 
 int __stdcall GetStatus() {
     return 0;
+}
+
+void __stdcall ModeChanged(char mode) {
+    cwMode = mode == 'C';
+    return;
 }
 
 static void test_cb(int cnt, int status, float offset, void* buffer) {
