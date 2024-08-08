@@ -14,9 +14,7 @@ Everything else in the code is just boilerplate and pretty straightforward.
 
 ## How to use
 
-Download the `extio_qmx.dll` file here or build it from source.
-
-Place the `extio_qmx.dll` file inside the N1MM Logger+ installation directory (usually it's `C:\Program Files (x86)\N1MM Logger+`). 
+Download the `extio_qmx.dll` file [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/extio_qmx.dll) or build it from source. Place the `extio_qmx.dll` file inside the N1MM Logger+ installation directory (usually it's `C:\Program Files (x86)\N1MM Logger+`). 
 
 Disconnect your QMX from your computer first. Enable your QMX's I/Q mode and restart it. Reconnect QMX to your computer. Make sure it's in CW mode, not Digi.
 
@@ -45,8 +43,8 @@ Since N1MM Logger+ is a 32-bit program, we have to use 32-bit toolchain. I use `
 
 Follow [PortAudio's instruction](https://files.portaudio.com/docs/v19-doxydocs/compile_windows_mingw.html) to build `portaudio` first.
 
-To build the `extio.dll` itself, under `mingw32`'s environment, use the command below to compile:
+To build the `extio.dll` itself, in `mingw32`'s environment, use the command below to compile:
 
 ```
-g++ -Wall -shared -o extio_qmx.dll extio_qmx.cpp -lportaudio "-Wl,--kill-at"
+g++ -Wall -shared -static -o extio_qmx.dll extio_qmx.cpp -lportaudio -lwinmm "-Wl,--kill-at"
 ```
