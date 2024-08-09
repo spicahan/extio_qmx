@@ -16,6 +16,16 @@ Everything else in the code is just boilerplate and pretty straightforward.
 
 Download the `extio_qmx.dll` file [here](https://github.com/spicahan/extio_qmx/releases/download/v0.1/extio_qmx.dll) or build it from source. Place the `extio_qmx.dll` file inside the N1MM Logger+ installation directory (usually it's `C:\Program Files (x86)\N1MM Logger+`). 
 
+### CW-R and CW offset
+
+By default, the file is using offset of 700Hz in upper sideband. You can configure it to use CW-R (lower sideband) and a different offset. The configuration is done by renaming the file. The syntax is to add a string of `cw_` or `cwr_` followed by `xxxhz` in the filename. They need to be all lower case. For example
+* if you want to use 600Hz as offset but not CW-R, you can rename the file to be `extio_qmx_cw_600hz.dll`.
+* if you want to use 500Hz and CW-R, you can rename the file to be `extio_qmx_cwr_500hz.dll`.
+
+### Pay attention to CW-R
+
+If you want to use CW-R, you need to configure it in QMX. In addition, you need to make sure N1MM Logger+ is also configured to use CW-R, otherwise the spectrum display frequency mark will be off. To toggle between CW and CW-R in N1MM Logger+, press `Ctrl-Alt-R`. 
+
 Disconnect your QMX from your computer first. Enable your QMX's I/Q mode and restart it. Reconnect QMX to your computer. Make sure it's in CW mode, not Digi.
 
 Follow the N1MM Logger+ configuration instructions: [N1MM SDR Server – For radios with Extio dll support – THIS IS THE PREFERRED METHOD FOR SDRPlay and Airspy HF+/Discovery SDRs](https://n1mmwp.hamdocs.com/manual-windows/spectrum-display-window/#n1mm-sdr-server-for-radios-with-extio-dll-support-this-is-the-preferred-method-for-sdrplay-and-airspy-hf-discovery-sdrs).
@@ -32,10 +42,6 @@ Close the spectrum setup window. Right click on the main body of the spectrum di
 
 
 That's pretty much it. Now you can change frequency from 3 places - from the spectrum display, from the logger main window, or from QMX.
-
-## **NO TX in I/Q Mode!**
-
-Remember, **when in I/Q mode, your QMX won't TX and there's no audio coming out from the headphone jack**. So this project right now is not super useful - it only gives a taste of what it would look like eventually. However, I'm considering creating a slightly different version of `extio.dll` to **work with QMX that's in non-I/Q mode**. When I/Q is disabled, you can TX. When it's in Digi mode, you can get a 3kHz-wide bandwidth in USB (upper sideband). It's quite narrow for spectrum display, but it's better than nothing. Stay tuned!
 
 ## How to build
 

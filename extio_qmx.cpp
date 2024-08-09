@@ -29,7 +29,6 @@ extern "C" {
 constexpr long SampleRate = 48000;
 constexpr int IQPairs = 512;
 constexpr long QmxIFFreq = 12000;
-constexpr long QmxSidetoneFreq = 700;
 
 // Global variables
 PaDeviceIndex deviceIdx = paNoDevice;
@@ -38,6 +37,7 @@ void (*IQCallback)(int, int, float, void*) = nullptr;
 static bool started = false;
 static long fakeLOFreq = 0;
 static bool cwMode = false;
+static long QmxCwOffsetFreq = 0;
 
 #ifdef I_ONLY
 constexpr int DecimationFactor = 8;
@@ -52,6 +52,44 @@ static void iqSampling(float iqSample[2]) {
     ++n;
 }
 #endif
+
+int getCwOffset(const std::string &filename) {
+    bool isCwr = false;
+    int cwOffset = 700; // The default QMX CW offset
+    size_t pos = filename.find("cw_");
+    if (pos == std::string::npos) {
+        pos = filename.find("cwr_");
+        if (pos != std::string::npos) {
+            isCwr = true;
+        }
+    }
+    
+    if (pos != std::string::npos) {
+        // Extract the offset part after 'cw_' or 'cwr_'
+        size_t start = pos + 3 + isCwr; // 'cw_' has 3 chars and 'cwr_' has 4 chars
+        size_t end = filename.find("hz", start);
+        if (end != std::string::npos) {
+            std::string offsetStr = filename.substr(start, end - start);
+            cwOffset = std::stoi(offsetStr);
+        }
+    }
+    if (isCwr) {
+        cwOffset *= -1;
+    }
+    return cwOffset;
+}
+// Using the filename to determin CW offset
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+{
+    char path[MAX_PATH];
+
+    // Get the full path of the DLL
+    if (GetModuleFileNameA(hModule, path, MAX_PATH) > 0)
+    {
+        QmxCwOffsetFreq = getCwOffset(path);
+    }
+    return TRUE;
+}
 
 // Function to enumerate and initialize the soundcard
 PaDeviceIndex FindSoundCard() {
@@ -188,7 +226,7 @@ long __stdcall GetHWLO() {
 #if (defined(QDX) || defined(I_ONLY))
     return fakeLOFreq;
 #else
-    return fakeLOFreq - (QmxIFFreq + (cwMode ? QmxSidetoneFreq : 0));
+    return fakeLOFreq - (QmxIFFreq + QmxCwOffsetFreq);
 #endif
 }
 
